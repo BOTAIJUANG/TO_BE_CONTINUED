@@ -780,13 +780,10 @@
               shipping: (p[4] || "").trim(),
               ship_date: (p[5] || "").trim(),
               arrive_date: (p[6] || "").trim(),
-              item_name: (p[7] || "").trim(),
-              item_spec: (p[8] || "").trim(),
-              item_qty: (p[9] || "").trim(),
-              item_price: (p[10] || "").trim(),
-              note: (p[11] || "").trim(),
-              buyer: (p[12] || "").trim(),
-              event_id: (p[13] || "").trim(),
+              items: (p[7] || "").trim(),
+              note: (p[8] || "").trim(),
+              buyer: (p[9] || "").trim(),
+              event_id: (p[10] || "").trim(),
             };
           });
       }
@@ -799,53 +796,26 @@
           return;
         }
 
-        // Group by order_id
-        var orders = {};
-        rows.forEach(function (r) {
-          if (!r.order_id) return;
-          if (!orders[r.order_id]) {
-            orders[r.order_id] = {
-              order_id: r.order_id,
-              customer: r.customer,
-              phone: r.phone,
-              address: r.address,
-              shipping: r.shipping,
-              ship_date: r.ship_date,
-              arrive_date: r.arrive_date,
-              note: r.note,
-              buyer: r.buyer,
-              total: 0,
-              items: [],
-            };
-          }
-          orders[r.order_id].total += parseFloat(r.item_price) || 0;
-          orders[r.order_id].items.push({
-            name: r.item_name,
-            spec: r.item_spec,
-            qty: r.item_qty,
-            price: r.item_price,
-          });
-        });
-
-        var orderList = Object.values(orders);
+        var orderList = rows.filter(function (r) { return r.order_id; });
         var pickup = orderList.filter(function (o) {
           return o.shipping && o.shipping.includes("實體門市");
         });
         var delivery = orderList.filter(function (o) {
           return !o.shipping || !o.shipping.includes("實體門市");
         });
-        var totalAmt = orderList.reduce(function (s, o) {
-          return s + o.total;
-        }, 0);
 
-        // Product stats
+        // Parse items text "杜拜Q餅×3、黑糖麻糬×2" into product stats
         var pMap = {};
-        rows.forEach(function (r) {
-          if (!r.item_name) return;
-          if (!pMap[r.item_name])
-            pMap[r.item_name] = { name: r.item_name, qty: 0, price: 0 };
-          pMap[r.item_name].qty += parseInt(r.item_qty) || 0;
-          pMap[r.item_name].price += parseFloat(r.item_price) || 0;
+        orderList.forEach(function (o) {
+          if (!o.items) return;
+          o.items.split("\u3001").forEach(function (part) {
+            var m = part.match(/^(.+?)×(\d+)$/);
+            if (m) {
+              var name = m[1], qty = parseInt(m[2]) || 0;
+              if (!pMap[name]) pMap[name] = { name: name, qty: 0 };
+              pMap[name].qty += qty;
+            }
+          });
         });
         var products = Object.values(pMap).sort(function (a, b) {
           return b.qty - a.qty;
@@ -860,10 +830,6 @@
           " 門市 / " +
           delivery.length +
           " 寄送</div></div>";
-        html +=
-          '<div class="stat-card orange"><div class="stat-label">今日出貨金額</div><div class="stat-value">$' +
-          totalAmt.toLocaleString() +
-          "</div></div>";
         html += "</div>";
 
         if (products.length) {
@@ -875,10 +841,6 @@
             html += '<div class="product-name">' + esc(p.name) + "</div>";
             html +=
               '<div class="product-qty">' + p.qty + " <span>個</span></div>";
-            html +=
-              '<div class="product-price">$' +
-              p.price.toLocaleString() +
-              "</div>";
             html += "</div>";
           });
           html += "</div>";
@@ -890,24 +852,11 @@
           " 筆）</div>";
         orderList.forEach(function (o, i) {
           var isPickup = o.shipping && o.shipping.includes("實體門市");
-          var preview = o.items
-            .map(function (it) {
-              return esc(it.name) + "×" + it.qty;
-            })
-            .join("、");
           var chips = o.items
-            .map(function (it) {
-              var s = it.spec ? " (" + esc(it.spec) + ")" : "";
-              return (
-                '<span class="chip">' +
-                esc(it.name) +
-                "×" +
-                it.qty +
-                s +
-                "</span>"
-              );
-            })
-            .join("");
+            ? o.items.split("\u3001").map(function (part) {
+                return '<span class="chip">' + esc(part) + "</span>";
+              }).join("")
+            : "";
 
           html += '<div class="order-card">';
           html +=
@@ -923,7 +872,7 @@
             (isPickup ? "門市" : "寄送") +
             "</span>";
           html += '<span class="order-name">' + esc(o.customer) + "</span>";
-          html += '<span class="order-preview">' + preview + "</span>";
+          html += '<span class="order-preview">' + esc(o.items || "") + "</span>";
           html += '<span class="chevron" id="ch' + i + '">▼</span>';
           html += "</div>";
           html += '<div class="order-detail" id="od' + i + '">';
@@ -956,10 +905,6 @@
             '<div class="detail-row"><span class="detail-key">商品</span><span class="detail-val"><div class="chips">' +
             chips +
             "</div></span></div>";
-          html +=
-            '<div class="detail-row"><span class="detail-key">金額</span><span class="detail-val" style="font-weight:600">$' +
-            o.total.toLocaleString() +
-            "</span></div>";
           if (o.note)
             html +=
               '<div class="detail-row"><span class="detail-key">備註</span><span class="detail-val">' +
