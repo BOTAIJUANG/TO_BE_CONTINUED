@@ -270,20 +270,23 @@ function queryOrders() {
 
   fetch(ORDER_URL, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({date: date})
+    body: new URLSearchParams({date: date})
   })
-  .then(function(r) { return r.text(); })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  })
   .then(function(text) {
     btn.disabled = false;
     btn.textContent = '查詢';
     var rows = parseOrderText(text);
     renderOrders(rows, date);
   })
-  .catch(function() {
+  .catch(function(err) {
     btn.disabled = false;
     btn.textContent = '查詢';
-    document.getElementById('ordersContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">查詢失敗，請確認 Make Scenario 已啟動</div></div>';
+    console.error('訂單查詢錯誤:', err);
+    document.getElementById('ordersContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">查詢失敗，請確認 Make Scenario 已啟動</div><div style="font-size:12px;color:#888;margin-top:8px">' + esc(err.message||'') + '</div></div>';
   });
 }
 
@@ -403,7 +406,7 @@ function renderOrders(rows, date) {
 
 // ===== ALERTS =====
 function loadAlerts() {
-  fetch(ALERTS_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'})
+  fetch(ALERTS_URL, {method:'POST', body: new URLSearchParams({action: 'load'})})
   .then(function(r) { return r.text(); })
   .then(function(text) {
     if (!text || !text.trim()) { allAlerts = []; }
@@ -486,7 +489,7 @@ function renderAlerts() {
 function markResolved(key, i, btn) {
   btn.disabled = true;
   btn.textContent = '處理中...';
-  fetch(RESOLVE_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: key})})
+  fetch(RESOLVE_URL, {method:'POST', body: new URLSearchParams({key: key})})
   .then(function() {
     var a = allAlerts.find(function(x) { return x.key === key; });
     if (a) a.resolved = 'true';
