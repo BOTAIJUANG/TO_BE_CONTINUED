@@ -723,7 +723,7 @@
         var btn = document.getElementById("queryBtn");
         btn.disabled = true;
         btn.textContent = "查詢中...";
-        if (!document.querySelector('.order-card')) {
+        if (!document.querySelector(".order-card")) {
           document.getElementById("ordersContent").innerHTML =
             '<div class="loading"><div class="spinner"></div>查詢中...</div>';
         }
@@ -740,7 +740,7 @@
             btn.disabled = false;
             btn.textContent = "查詢";
             if (!text || !text.trim() || text.trim() === "Accepted") {
-              if (!document.querySelector('.order-card, .empty')) {
+              if (!document.querySelector(".order-card, .empty")) {
                 document.getElementById("ordersContent").innerHTML =
                   '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">這天沒有出貨訂單</div></div>';
               }
@@ -753,7 +753,7 @@
             btn.disabled = false;
             btn.textContent = "查詢";
             console.error("訂單查詢錯誤:", err);
-            if (!document.querySelector('.order-card')) {
+            if (!document.querySelector(".order-card")) {
               document.getElementById("ordersContent").innerHTML =
                 '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">查詢失敗，請確認 Make Scenario 已啟動</div><div style="font-size:12px;color:#888;margin-top:8px">' +
                 esc(err.message || "") +
@@ -796,7 +796,9 @@
           return;
         }
 
-        var orderList = rows.filter(function (r) { return r.order_id; });
+        var orderList = rows.filter(function (r) {
+          return r.order_id;
+        });
         var pickup = orderList.filter(function (o) {
           return o.shipping && o.shipping.includes("實體門市");
         });
@@ -811,7 +813,8 @@
           o.items.split("\u3001").forEach(function (part) {
             var m = part.match(/^(.+?)×(\d+)$/);
             if (m) {
-              var name = m[1], qty = parseInt(m[2]) || 0;
+              var name = m[1],
+                qty = parseInt(m[2]) || 0;
               if (!pMap[name]) pMap[name] = { name: name, qty: 0 };
               pMap[name].qty += qty;
             }
@@ -853,9 +856,12 @@
         orderList.forEach(function (o, i) {
           var isPickup = o.shipping && o.shipping.includes("實體門市");
           var chips = o.items
-            ? o.items.split("\u3001").map(function (part) {
-                return '<span class="chip">' + esc(part) + "</span>";
-              }).join("")
+            ? o.items
+                .split("\u3001")
+                .map(function (part) {
+                  return '<span class="chip">' + esc(part) + "</span>";
+                })
+                .join("")
             : "";
 
           html += '<div class="order-card">';
@@ -872,7 +878,8 @@
             (isPickup ? "門市" : "寄送") +
             "</span>";
           html += '<span class="order-name">' + esc(o.customer) + "</span>";
-          html += '<span class="order-preview">' + esc(o.items || "") + "</span>";
+          html +=
+            '<span class="order-preview">' + esc(o.items || "") + "</span>";
           html += '<span class="chevron" id="ch' + i + '">▼</span>';
           html += "</div>";
           html += '<div class="order-detail" id="od' + i + '">';
