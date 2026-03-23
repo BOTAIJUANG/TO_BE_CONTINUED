@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [update-orders]
 
+permissions:
+  contents: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
