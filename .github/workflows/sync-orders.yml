@@ -11,13 +11,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Write orders.json
+        env:
+          ORDERS_JSON: ${{ toJSON(github.event.client_payload.orders) }}
         run: |
-          echo '${{ github.event.client_payload.orders }}' | python3 -c "
-          import sys, json
-          raw = sys.stdin.read().strip()
-          data = json.loads(raw)
-          print(json.dumps(data, ensure_ascii=False, indent=2))
-          " > orders.json
+          python3 -c "
+          import os, json
+          data = json.loads(os.environ['ORDERS_JSON'])
+          with open('orders.json', 'w', encoding='utf-8') as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+              f.write('\n')
+          "
 
       - name: Commit and push
         run: |
