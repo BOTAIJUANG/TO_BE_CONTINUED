@@ -1,0 +1,32 @@
+name: Sync Orders
+
+on:
+  repository_dispatch:
+    types: [update-orders]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write orders.json
+        run: |
+          echo '${{ github.event.client_payload.orders }}' | python3 -c "
+          import sys, json
+          raw = sys.stdin.read().strip()
+          data = json.loads(raw)
+          print(json.dumps(data, ensure_ascii=False, indent=2))
+          " > orders.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "make-bot"
+          git config user.email "make-bot@users.noreply.github.com"
+          git add orders.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update orders.json"
+            git push
+          fi
