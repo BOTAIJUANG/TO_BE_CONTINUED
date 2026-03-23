@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>未半甜點 管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green-dark: #1a3a2a;
+  --green-mid: #2d5a3d;
+  --green-accent: #4a9460;
+  --green-light: #7ec89a;
+  --cream: #f5f0e8;
+  --cream-dark: #e8e0d0;
+  --orange: #e07840;
+  --red: #c94040;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #888;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', sans-serif; background: var(--cream); color: var(--text-primary); min-height: 100vh; }
+
+/* Header */
+.header {
+  background: var(--green-dark);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-brand { display: flex; align-items: center; gap: 10px; }
+.header-brand .dot { width: 8px; height: 8px; background: var(--green-light); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.header-brand h1 { color: var(--cream); font-size: 15px; font-weight: 600; }
+
+/* Nav tabs */
+.nav-tabs {
+  display: flex;
+  gap: 0;
+  height: 100%;
+  align-items: flex-end;
+}
+.nav-tab {
+  padding: 8px 20px;
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+.nav-tab:hover { color: rgba(255,255,255,0.9); }
+.nav-tab.active { color: white; border-bottom-color: var(--green-light); font-weight: 500; }
+.nav-tab .alert-dot {
+  background: var(--red);
+  color: white;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-weight: 700;
+  display: none;
+}
+.nav-tab .alert-dot.show { display: inline; }
+
+/* Page sections */
+.page { display: none; padding: 24px; max-width: 760px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ===== ORDERS PAGE ===== */
+.search-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.search-bar label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; font-weight: 500; }
+.search-bar input[type="date"] {
+  flex: 1;
+  border: 1px solid var(--cream-dark);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--cream);
+  outline: none;
+}
+.search-bar input[type="date"]:focus { border-color: var(--green-accent); }
+.btn-query {
+  background: var(--green-dark);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.btn-query:hover { background: var(--green-mid); }
+
+/* Stats cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green-accent);
+}
+.stat-card.orange { border-left-color: var(--orange); }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.stat-value { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--green-dark); }
+.stat-card.orange .stat-value { color: var(--orange); }
+.stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* Section titles */
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  margin-top: 20px;
+}
+
+/* Product stats */
+.product-list {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.product-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.product-item:last-child { border-bottom: none; }
+.product-rank {
+  width: 22px; height: 22px;
+  background: var(--cream-dark);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.product-name { flex: 1; font-size: 14px; font-weight: 500; }
+.product-qty { font-size: 14px; font-weight: 700; color: var(--green-dark); font-family: 'DM Mono', monospace; }
+.product-qty span { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+.product-price { font-size: 12px; color: var(--text-muted); margin-left: 12px; }
+
+/* Order cards */
+.order-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.order-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.order-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  gap: 10px;
+}
+.order-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.badge-pickup { background: #e8f4ee; color: var(--green-mid); }
+.badge-delivery { background: #fff3e8; color: var(--orange); }
+.order-name { font-size: 15px; font-weight: 600; flex: 0 0 auto; }
+.order-items-preview { font-size: 13px; color: var(--text-muted); flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.order-chevron { font-size: 11px; color: var(--text-muted); flex-shrink: 0; transition: transform 0.2s; }
+.order-chevron.open { transform: rotate(180deg); }
+
+/* Order detail */
+.order-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  border-top: 0px solid var(--border);
+}
+.order-detail.open {
+  max-height: 600px;
+  border-top: 1px solid var(--border);
+}
+.detail-content { padding: 14px 16px; }
+.detail-row {
+  display: flex;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--cream-dark);
+  gap: 12px;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-key { font-size: 12px; color: var(--text-muted); width: 72px; flex-shrink: 0; padding-top: 1px; }
+.detail-val { font-size: 13px; color: var(--text-primary); flex: 1; }
+.item-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.item-chip {
+  background: var(--cream);
+  border: 1px solid var(--cream-dark);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ===== ALERTS PAGE ===== */
+.alert-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.a-stat { background: white; border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); border: 1px solid var(--border); text-align: center; }
+.a-stat-val { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; }
+.a-stat-val.red { color: var(--red); }
+.a-stat-val.orange { color: var(--orange); }
+.a-stat-val.green { color: var(--green-accent); }
+.a-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+.filter-tabs { display: flex; gap: 4px; background: var(--cream-dark); padding: 3px; border-radius: 8px; margin-bottom: 14px; width: fit-content; }
+.filter-tab { padding: 5px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: transparent; font-family: inherit; color: var(--text-secondary); transition: all 0.15s; }
+.filter-tab.active { background: white; color: var(--text-primary); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.alert-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.alert-card.resolved { opacity: 0.55; }
+.alert-header {
+  display: flex; align-items: center; padding: 14px 16px; cursor: pointer; gap: 10px;
+}
+.alert-dot-ind { width: 7px; height: 7px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+.alert-dot-ind.resolved { background: var(--green-accent); }
+.alert-order-id { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--cream); padding: 2px 6px; border-radius: 4px; color: var(--text-secondary); }
+.alert-customer { font-size: 15px; font-weight: 600; }
+.alert-preview { font-size: 12px; color: var(--text-muted); flex: 1; }
+.alert-time { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; white-space: nowrap; }
+
+.alert-detail { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; border-top: 0px solid var(--border); }
+.alert-detail.open { max-height: 400px; border-top: 1px solid var(--border); }
+.alert-detail-content { padding: 14px 16px; }
+.alert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 12px; }
+.alert-field label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 2px; }
+.alert-field span { font-size: 13px; }
+.alert-field span.conflict { color: var(--red); font-weight: 600; }
+.alert-msg { background: #fff8f5; border: 1px solid #fde8d8; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: var(--orange); margin-bottom: 12px; }
+.btn-resolve {
+  background: var(--green-accent); color: white; border: none;
+  padding: 7px 18px; border-radius: 7px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: background 0.2s;
+  float: right;
+}
+.btn-resolve:hover { background: var(--green-mid); }
+.btn-resolve:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Empty / loading */
+.empty { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+.empty-icon { font-size: 40px; opacity: 0.3; margin-bottom: 12px; }
+.empty-title { font-size: 15px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+.loading { display: flex; flex-direction: column; align-items: center; padding: 40px; color: var(--text-muted); font-size: 13px; gap: 10px; }
+.spinner { width: 22px; height: 22px; border: 2px solid var(--cream-dark); border-top-color: var(--green-accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="dot"></div>
+    <h1>未半甜點</h1>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('orders', this)">訂單管理</button>
+    <button class="nav-tab" onclick="switchTab('alerts', this)">
+      日期警示
+      <span class="alert-dot" id="alertDot">0</span>
+    </button>
+  </nav>
+</header>
+
+<!-- ORDERS PAGE -->
+<div class="page active" id="page-orders">
+  <div class="search-bar">
+    <label>出貨日</label>
+    <input type="date" id="dateInput" />
+    <button class="btn-query" onclick="queryOrders()">查詢</button>
+  </div>
+
+  <div id="ordersContent">
+    <div class="empty">
+      <div class="empty-icon">📦</div>
+      <div class="empty-title">選擇出貨日期查詢訂單</div>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTS PAGE -->
+<div class="page" id="page-alerts">
+  <div class="alert-stats">
+    <div class="a-stat"><div class="a-stat-val red" id="aPending">—</div><div class="a-stat-label">待處理</div></div>
+    <div class="a-stat"><div class="a-stat-val orange" id="aToday">—</div><div class="a-stat-label">今日新增</div></div>
+    <div class="a-stat"><div class="a-stat-val green" id="aResolved">—</div><div class="a-stat-label">已解決</div></div>
+  </div>
+
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="setAlertFilter('pending', this)">待處理</button>
+    <button class="filter-tab" onclick="setAlertFilter('resolved', this)">已解決</button>
+    <button class="filter-tab" onclick="setAlertFilter('all', this)">全部</button>
+  </div>
+
+  <div id="alertsContent">
+    <div class="loading"><div class="spinner"></div>載入中...</div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const ORDER_WEBHOOK = 'https://hook.eu1.make.com/sd1prgfxdz5r36tc5k254fcc0min8d5y';
+const ALERTS_WEBHOOK = 'https://hook.eu1.make.com/yxvfpcwyepjydd9vgquyd6a1u697vo63';
+const RESOLVE_WEBHOOK = 'https://hook.eu1.make.com/751ts148g26j7sdccj89p4boo1lxhpsk';
+
+// ===== STATE =====
+let allAlerts = [];
+let alertFilter = 'pending';
+let orderRows = [];
+
+// ===== TAB SWITCH =====
+function switchTab(tab, el) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'alerts') loadAlerts();
+}
+
+// ===== SET DEFAULT DATE =====
+window.onload = () => {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('dateInput').value = `${y}-${m}-${d}`;
+  loadAlerts();
+};
+
+// ===== ORDERS =====
+async function queryOrders() {
+  const date = document.getElementById('dateInput').value;
+  if (!date) return;
+
+  // Format date to match sheet format e.g. "2026-03-23"
+  const container = document.getElementById('ordersContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>查詢中...</div>';
+
+  try {
+    const res = await fetch(ORDER_WEBHOOK, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({date})
+    });
+    const rows = await res.json();
+    orderRows = Array.isArray(rows) ? rows : [];
+    renderOrders(orderRows, date);
+  } catch(e) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">查詢失敗，請確認 Make Scenario 已啟動</div></div>';
+  }
+}
+
+function renderOrders(rows, date) {
+  const container = document.getElementById('ordersContent');
+  if (!rows.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">這天沒有出貨訂單</div></div>`;
+    return;
+  }
+
+  // Group by order_id
+  const orders = {};
+  rows.forEach(r => {
+    if (!r.order_id) return;
+    if (!orders[r.order_id]) {
+      orders[r.order_id] = {
+        order_id: r.order_id,
+        customer: r.customer,
+        phone: r.phone,
+        address: r.address,
+        shipping: r.shipping,
+        ship_date: r.ship_date,
+        arrive_date: r.arrive_date,
+        note: r.note,
+        buyer: r.buyer,
+        total: r.total,
+        items: []
+      };
+    }
+    orders[r.order_id].items.push({
+      name: r.item_name,
+      spec: r.item_spec,
+      qty: r.item_qty,
+      price: r.item_price
+    });
+  });
+
+  const orderList = Object.values(orders);
+  const pickup = orderList.filter(o => o.shipping && o.shipping.includes('實體門市'));
+  const delivery = orderList.filter(o => !o.shipping || !o.shipping.includes('實體門市'));
+  const totalAmount = orderList.reduce((sum, o) => sum + (parseFloat(o.total)||0), 0);
+
+  // Product stats
+  const productMap = {};
+  rows.forEach(r => {
+    const key = r.item_name;
+    if (!key) return;
+    if (!productMap[key]) productMap[key] = {name: key, qty: 0, price: 0};
+    productMap[key].qty += parseInt(r.item_qty)||0;
+    productMap[key].price += parseFloat(r.item_price)||0;
+  });
+  const products = Object.values(productMap).sort((a,b) => b.qty - a.qty);
+
+  let html = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">今日出貨訂單</div>
+        <div class="stat-value">${orderList.length} 筆</div>
+        <div class="stat-sub">${pickup.length} 門市 / ${delivery.length} 寄送</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">今日出貨金額</div>
+        <div class="stat-value">$${totalAmount.toLocaleString()}</div>
+      </div>
+    </div>
+
+    <div class="section-title">商品統計</div>
+    <div class="product-list">
+      ${products.map((p,i) => `
+        <div class="product-item">
+          <div class="product-rank">${i+1}</div>
+          <div class="product-name">${p.name}</div>
+          <div class="product-qty">${p.qty} <span>個</span></div>
+          <div class="product-price">$${p.price.toLocaleString()}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="section-title">訂單明細（${orderList.length} 筆）</div>
+    ${orderList.map((o, i) => renderOrderCard(o, i)).join('')}
+  `;
+
+  container.innerHTML = html;
+}
+
+function renderOrderCard(o, i) {
+  const isPickup = o.shipping && o.shipping.includes('實體門市');
+  const itemsPreview = o.items.map(it => `${it.name}×${it.qty}`).join('、');
+  const itemChips = o.items.map(it => {
+    const specLabel = it.spec ? ` (${it.spec})` : '';
+    return `<span class="item-chip">${it.name}×${it.qty}${specLabel}</span>`;
+  }).join('');
+
+  return `
+    <div class="order-card">
+      <div class="order-header" onclick="toggleOrder('o${i}')">
+        <span class="order-type-badge ${isPickup ? 'badge-pickup' : 'badge-delivery'}">${isPickup ? '門市' : '寄送'}</span>
+        <span class="order-name">${o.customer}</span>
+        <span class="order-items-preview">${itemsPreview}</span>
+        <span class="order-chevron" id="chev-o${i}">▼</span>
+      </div>
+      <div class="order-detail" id="detail-o${i}">
+        <div class="detail-content">
+          <div class="detail-row"><span class="detail-key">訂單編號</span><span class="detail-val" style="font-family:'DM Mono',monospace;font-size:12px">${o.order_id}</span></div>
+          <div class="detail-row"><span class="detail-key">電話</span><span class="detail-val">${o.phone||'—'}</span></div>
+          <div class="detail-row"><span class="detail-key">取貨方式</span><span class="detail-val">${o.shipping||'—'}</span></div>
+          <div class="detail-row"><span class="detail-key">收件地址</span><span class="detail-val">${o.address||'—'}</span></div>
+          <div class="detail-row"><span class="detail-key">出貨日期</span><span class="detail-val">${o.ship_date||'未填寫'}</span></div>
+          <div class="detail-row"><span class="detail-key">到貨日期</span><span class="detail-val">${o.arrive_date||'—'}</span></div>
+          <div class="detail-row"><span class="detail-key">商品</span><span class="detail-val"><div class="item-chips">${itemChips}</div></span></div>
+          <div class="detail-row"><span class="detail-key">金額</span><span class="detail-val" style="font-weight:600">$${parseFloat(o.total||0).toLocaleString()}</span></div>
+          ${o.note ? `<div class="detail-row"><span class="detail-key">備註</span><span class="detail-val">${o.note}</span></div>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleOrder(id) {
+  const detail = document.getElementById('detail-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const isOpen = detail.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+}
+
+// ===== ALERTS =====
+async function loadAlerts() {
+  try {
+    const res = await fetch(ALERTS_WEBHOOK, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    const data = await res.json();
+    allAlerts = Array.isArray(data) ? data : [];
+    renderAlerts();
+    updateAlertStats();
+  } catch(e) {
+    document.getElementById('alertsContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">無法載入警示資料</div></div>';
+  }
+}
+
+function setAlertFilter(f, el) {
+  alertFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAlerts();
+}
+
+function renderAlerts() {
+  let list = allAlerts;
+  if (alertFilter === 'pending') list = allAlerts.filter(a => a.resolved !== 'true' && a.resolved !== true);
+  if (alertFilter === 'resolved') list = allAlerts.filter(a => a.resolved === 'true' || a.resolved === true);
+  list = [...list].sort((a,b) => new Date(b.timestamp||0) - new Date(a.timestamp||0));
+
+  const container = document.getElementById('alertsContent');
+  if (!list.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">${alertFilter==='pending'?'✓':'○'}</div><div class="empty-title">${alertFilter==='pending'?'沒有待處理的警示':'沒有符合的記錄'}</div></div>`;
+    return;
+  }
+  container.innerHTML = list.map((a,i) => renderAlertCard(a,i)).join('');
+}
+
+function renderAlertCard(a, i) {
+  const isResolved = a.resolved === 'true' || a.resolved === true;
+  const isPickup = a.shipping_method && a.shipping_method.includes('實體門市');
+  const ts = a.timestamp ? new Date(a.timestamp.replace(' ','T')).toLocaleString('zh-TW', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+  return `
+    <div class="alert-card ${isResolved?'resolved':''}" id="ac${i}">
+      <div class="alert-header" onclick="toggleAlert(${i})">
+        <div class="alert-dot-ind ${isResolved?'resolved':''}"></div>
+        <span class="alert-order-id">${a.order_id||'—'}</span>
+        <span class="alert-customer">${a.customer||'—'}</span>
+        <span class="alert-preview">${a.items||''}</span>
+        <span class="alert-time">${ts}</span>
+        <span class="order-chevron" id="achev${i}">▼</span>
+      </div>
+      <div class="alert-detail" id="ad${i}">
+        <div class="alert-detail-content">
+          <div class="alert-grid">
+            <div class="alert-field"><label>電話</label><span>${a.phone||'—'}</span></div>
+            <div class="alert-field"><label>取貨方式</label><span>${a.shipping_method||'—'}</span></div>
+            <div class="alert-field"><label>指定到貨日期</label><span class="${a.specified_date?'conflict':''}">${a.specified_date||'（未填寫）'}</span></div>
+            <div class="alert-field"><label>多規格日期欄位</label><span class="${a.spec_field?'conflict':''}">${a.spec_field||'（未填寫）'}</span></div>
+          </div>
+          <div class="alert-msg">⚠ ${a.message||'日期有問題，請確認'}</div>
+          <div style="overflow:hidden">
+            ${!isResolved
+              ? `<button class="btn-resolve" onclick="markResolved('${a.key}', ${i}, this)">標記已解決</button>`
+              : `<span style="font-size:13px;color:var(--green-accent);float:right">✓ 已解決</span>`
+            }
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleAlert(i) {
+  document.getElementById('ad'+i).classList.toggle('open');
+  document.getElementById('achev'+i).classList.toggle('open');
+}
+
+async function markResolved(key, i, btn) {
+  btn.disabled = true; btn.textContent = '處理中...';
+  try {
+    await fetch(RESOLVE_WEBHOOK, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})});
+    const a = allAlerts.find(x => x.key === key);
+    if (a) a.resolved = 'true';
+    renderAlerts();
+    updateAlertStats();
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '標記已解決';
+  }
+}
+
+function updateAlertStats() {
+  const pending = allAlerts.filter(a => a.resolved !== 'true' && a.resolved !== true).length;
+  const resolved = allAlerts.filter(a => a.resolved === 'true' || a.resolved === true).length;
+  const todayStr = new Date().toISOString().slice(0,10);
+  const today = allAlerts.filter(a => a.timestamp && a.timestamp.startsWith(todayStr)).length;
+
+  document.getElementById('aPending').textContent = pending;
+  document.getElementById('aToday').textContent = today;
+  document.getElementById('aResolved').textContent = resolved;
+
+  const dot = document.getElementById('alertDot');
+  dot.textContent = pending;
+  dot.classList.toggle('show', pending > 0);
+}
+</script>
+</body>
+</html>
