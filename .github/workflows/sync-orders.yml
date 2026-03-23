@@ -1,8 +1,9 @@
 name: Sync Orders
 
 on:
-  repository_dispatch:
-    types: [update-orders]
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,14 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write orders.json
+      - name: Fetch orders from Make
         run: |
-          echo "${{ github.event.client_payload.data }}" | base64 -d | python3 -c "
+          curl -s "https://hook.eu1.make.com/zxem83uppw44hqm0t7d7ovtbdsoy4inu" | python3 -c "
           import sys, json
-          data = json.load(sys.stdin)
+          raw = sys.stdin.read().strip()
+          data = json.loads(raw)
           with open('orders.json', 'w', encoding='utf-8') as f:
               json.dump(data, f, ensure_ascii=False, indent=2)
               f.write('\n')
+          print(f'Fetched {len(data)} orders')
           "
 
       - name: Commit and push
