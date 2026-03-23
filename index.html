@@ -752,7 +752,7 @@
       }
 
       function parseOrderText(text) {
-        if (!text || !text.trim()) return [];
+        if (!text || !text.trim() || text.trim() === "Accepted") return [];
         return text
           .trim()
           .split("\n")
